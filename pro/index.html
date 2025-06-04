@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird</title>
+    <title>Invincible Flappy Bird</title>
     <style>
         body {
             margin: 0;
@@ -12,7 +12,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #70c5ce;
+            background-color: #2c3e50;
             font-family: 'Arial', sans-serif;
             overflow: hidden;
             touch-action: manipulation;
@@ -26,7 +26,7 @@
             background: linear-gradient(to bottom, #70c5ce 0%, #70c5ce 50%, #5cb85c 100%);
             border: 3px solid #333;
             border-radius: 5px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         }
         
         #bird {
@@ -160,7 +160,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.7);
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -173,6 +173,21 @@
             color: #ffeb3b;
             margin-bottom: 30px;
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+        }
+        
+        #cheat-mode {
+            color: #00ff00;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 0 0 10px #00ff00;
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00ff00, 0 0 20px #00ff00; }
+            to { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #00ff00, 0 0 40px #00ff00; }
         }
         
         #start-btn {
@@ -208,6 +223,23 @@
             border-radius: 50%;
             z-index: 1;
         }
+        
+        #invincibility-indicator {
+            position: absolute;
+            top: 60px;
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff0000;
+            z-index: 20;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            display: none;
+        }
+        
+        .glow {
+            animation: glow 1.5s ease-in-out infinite alternate;
+        }
     </style>
 </head>
 <body>
@@ -215,14 +247,18 @@
         <div id="bird"></div>
         <div id="ground"></div>
         <div id="score">0</div>
+        <div id="invincibility-indicator">INVINCIBLE MODE ACTIVATED!</div>
         
         <div id="start-screen">
             <h1>Flappy Bird</h1>
+            <div id="cheat-mode">CHEAT MODE: INVINCIBILITY ACTIVATED!</div>
             <button id="start-btn">Start Game</button>
             <div id="instructions">
                 Tap or press SPACE to flap wings<br>
-                Avoid the pipes!<br>
-                Game gets progressively harder as you score points
+                Avoid the pipes! (Just kidding, you're invincible)<br>
+                Game gets progressively harder as you score points<br>
+                <br>
+                <span style="color: #ffeb3b; font-weight: bold;">You can't die! Play pranks on your friends!</span>
             </div>
         </div>
         
@@ -243,6 +279,7 @@
         const restartBtn = document.getElementById('restart-btn');
         const startScreen = document.getElementById('start-screen');
         const startBtn = document.getElementById('start-btn');
+        const invincibilityIndicator = document.getElementById('invincibility-indicator');
         
         // Game variables
         let birdTop = 300;
@@ -273,6 +310,12 @@
         
         // Create initial clouds
         createClouds(5);
+        
+        // Show invincibility indicator
+        invincibilityIndicator.style.display = 'block';
+        setTimeout(() => {
+            invincibilityIndicator.style.display = 'none';
+        }, 3000);
         
         // Handle user input
         function handleInput(e) {
@@ -306,7 +349,8 @@
             updateBird();
             updatePipes(timestamp);
             updateClouds();
-            checkCollisions();
+            // Collisions are disabled for invincibility
+            checkCollisions(); // Still called for visual effects
             
             animationFrameId = requestAnimationFrame(gameLoop);
         }
@@ -337,6 +381,17 @@
             if (birdTop < 0) {
                 birdTop = 0;
                 velocity = 0;
+            }
+            
+            // If bird goes below ground, bring it back up to the sky
+            if (birdTop > gameContainer.offsetHeight - 30) {
+                birdTop = 50;
+                velocity = jump * 0.7;
+                // Show invincibility indicator
+                invincibilityIndicator.style.display = 'block';
+                setTimeout(() => {
+                    invincibilityIndicator.style.display = 'none';
+                }, 1000);
             }
         }
         
@@ -482,15 +537,28 @@
             }
         }
         
-        // Collision detection
+        // Collision detection - modified for invincibility
         function checkCollisions() {
-            // Check ground collision
+            // Visual effect when bird hits ground but doesn't die
             if (birdTop + 30 > gameContainer.offsetHeight - 60) {
-                endGame();
-                return;
+                // Instead of ending game, bounce the bird back up
+                velocity = jump * 0.7;
+                birdTop = gameContainer.offsetHeight - 100;
+                
+                // Flash the screen for effect
+                gameContainer.style.boxShadow = '0 0 30px red';
+                setTimeout(() => {
+                    gameContainer.style.boxShadow = '0 0 20px rgba(0, 0, 0, 0.5)';
+                }, 200);
+                
+                // Show invincibility indicator
+                invincibilityIndicator.style.display = 'block';
+                setTimeout(() => {
+                    invincibilityIndicator.style.display = 'none';
+                }, 1000);
             }
             
-            // Check pipe collisions
+            // Visual effect when bird hits pipes
             const birdRect = {
                 left: birdLeft,
                 right: birdLeft + 40,
@@ -516,31 +584,29 @@
                     bottom: pipeBottom
                 };
                 
-                // Simple rectangle collision detection
+                // Visual collision effect without ending the game
                 if (birdRect.right > pipeRect.left && 
                     birdRect.left < pipeRect.right && 
                     birdRect.bottom > pipeRect.top && 
                     birdRect.top < pipeRect.bottom) {
-                    endGame();
-                    return;
+                    
+                    // Flash the pipe for effect
+                    pipe.element.style.boxShadow = '0 0 20px red';
+                    setTimeout(() => {
+                        if (pipe.element) {
+                            pipe.element.style.boxShadow = 'none';
+                        }
+                    }, 300);
+                    
+                    // Play crash sound for effect
+                    playCrashSound();
                 }
             }
         }
         
         // Game state functions
         function endGame() {
-            gameRunning = false;
-            cancelAnimationFrame(animationFrameId);
-            
-            // Update high score
-            highScore = Math.max(score, highScore);
-            finalScoreElement.textContent = `${score} (High: ${highScore})`;
-            
-            // Show game over screen
-            gameOverElement.style.display = 'flex';
-            
-            // Play crash sound
-            playCrashSound();
+            // Disabled for invincibility mode
         }
         
         function resetGame() {
